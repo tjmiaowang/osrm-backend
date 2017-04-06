@@ -408,13 +408,13 @@ updateTurnPenalties(const UpdaterConfig &config,
                     const std::vector<extractor::QueryNode> &internal_to_external_node_map)
 {
     const auto weight_multiplier = profile_properties.GetWeightMultiplier();
-    const auto turn_penalties_index_region =
+    const auto turn_index_region =
         mmapFile(config.turn_penalties_index_path, boost::interprocess::read_only);
 
     // Mapped file pointer for turn indices
     const extractor::lookup::TurnIndexBlock *turn_index_blocks =
         reinterpret_cast<const extractor::lookup::TurnIndexBlock *>(
-            turn_penalties_index_region.get_address());
+            turn_index_region.get_address());
     BOOST_ASSERT(is_aligned<extractor::lookup::TurnIndexBlock>(turn_index_blocks));
 
     // Get the turn penalty and update to the new value if required
@@ -455,19 +455,17 @@ updateTurnPenalties(const UpdaterConfig &config,
 }
 std::vector<std::uint64_t>
 updateConditionalTurns(const UpdaterConfig &config,
-                       const TurnLookupTable &turn_penalty_lookup,
                        std::vector<TurnPenalty> &turn_weight_penalties,
                        std::vector<extractor::InputRestrictionContainer> &conditional_turns,
                        const std::vector<extractor::QueryNode> &internal_to_external_node_map,
                        Timezoner time_zone_handler)
 {
-    const auto turn_penalties_index_region =
+    const auto turn_index_region =
         mmapFile(config.turn_penalties_index_path, boost::interprocess::read_only);
-
     // Mapped file pointer for turn indices
     const extractor::lookup::TurnIndexBlock *turn_index_blocks =
         reinterpret_cast<const extractor::lookup::TurnIndexBlock *>(
-            turn_penalties_index_region.get_address());
+            turn_index_region.get_address());
     BOOST_ASSERT(is_aligned<extractor::lookup::TurnIndexBlock>(turn_index_blocks));
 
     // Get the turn penalty and update to the new value if required
@@ -478,29 +476,22 @@ updateConditionalTurns(const UpdaterConfig &config,
     {
         // edges are stored by internal OSRM ids, these need to be mapped back to OSM ids
         const extractor::lookup::TurnIndexBlock internal_turn = turn_index_blocks[edge_index];
-        const Turn osm_turn{internal_to_external_node_map[internal_turn.from_id].node_id,
-                            internal_to_external_node_map[internal_turn.via_id].node_id,
-                            internal_to_external_node_map[internal_turn.to_id].node_id};
 
-        if (auto value = turn_penalty_lookup(osm_turn))
+        const auto FindTurnEdge =
+            [&internal_turn](const extractor::InputRestrictionContainer &lhs) {
+                return internal_turn.from_id == lhs.restriction.from.node &&
+                       internal_turn.via_id == lhs.restriction.via.node &&
+                       internal_turn.to_id == lhs.restriction.to.node;
+            };
+        const auto found_conditional =
+            find_if(begin(conditional_turns), end(conditional_turns), FindTurnEdge);
+        // lambda for finding turns in conditional turn restrictions
+        if (found_conditional != end(conditional_turns))
         {
-            // lambda for finding turns in conditional turn restrictions
-            const auto FindTurnEdge =
-                [&internal_turn](const extractor::InputRestrictionContainer &lhs) {
-                    return internal_turn.from_id == lhs.restriction.from.node &&
-                           internal_turn.via_id == lhs.restriction.via.node &&
-                           internal_turn.to_id == lhs.restriction.to.node;
-                };
-            const auto found_conditional =
-                find_if(begin(conditional_turns), end(conditional_turns), FindTurnEdge);
-            if (found_conditional != end(conditional_turns))
+            if (!ValidateTurn(time_zone_handler, *found_conditional, internal_to_external_node_map))
             {
-                if (!ValidateTurn(
-                        time_zone_handler, *found_conditional, internal_to_external_node_map))
-                {
-                    turn_weight_penalties[edge_index] = INVALID_TURN_PENALTY;
-                    updated_turns.push_back(edge_index);
-                }
+                turn_weight_penalties[edge_index] = INVALID_TURN_PENALTY;
+                updated_turns.push_back(edge_index);
             }
         }
     }
@@ -649,7 +640,6 @@ EdgeID Updater::LoadAndUpdateEdgeExpandedGraph(
         Timezoner time_zone_handler;
         time_zone_handler = Timezoner(config.tz_file_path);
         auto updated_turn_penalties = updateConditionalTurns(config,
-                                                             turn_penalty_lookup,
                                                              turn_weight_penalties,
                                                              conditional_turns,
                                                              internal_to_external_node_map,
