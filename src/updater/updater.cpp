@@ -552,7 +552,7 @@ EdgeID Updater::LoadAndUpdateEdgeExpandedGraph(
         extractor::io::read(config.turn_restrictions_path, conditional_turns);
     }
 
-    if (!update_edge_weights && !update_turn_penalties)
+    if (!update_edge_weights && !update_turn_penalties && !update_conditional_turns)
     {
         saveDatasourcesNames(config);
         return max_edge_id;
@@ -567,7 +567,7 @@ EdgeID Updater::LoadAndUpdateEdgeExpandedGraph(
     extractor::SegmentDataContainer segment_data;
     std::vector<TurnPenalty> turn_weight_penalties;
     std::vector<TurnPenalty> turn_duration_penalties;
-    if (update_edge_weights || update_turn_penalties)
+    if (update_edge_weights || update_turn_penalties || update_conditional_turns)
     {
         const auto load_segment_data = [&] {
             extractor::io::read(config.geometry_path, segment_data);
@@ -647,8 +647,7 @@ EdgeID Updater::LoadAndUpdateEdgeExpandedGraph(
     {
         // initialize instance of class that handles time zone resolution
         Timezoner time_zone_handler;
-        if (update_turn_penalties)
-            time_zone_handler = Timezoner(config.tz_file_path);
+        time_zone_handler = Timezoner(config.tz_file_path);
         auto updated_turn_penalties = updateConditionalTurns(config,
                                                              turn_penalty_lookup,
                                                              turn_weight_penalties,
