@@ -1,3 +1,6 @@
+#ifndef EXTRACT_CONDITIONALS_HPP
+#define EXTRACT_CONDITIONALS_HPP
+
 #include "util/conditional_restrictions.hpp"
 #include "util/for_each_pair.hpp"
 #include "util/log.hpp"
