@@ -106,16 +106,19 @@ inline void read(const boost::filesystem::path &path, std::vector<InputRestricti
     const auto fingerprint = storage::io::FileReader::VerifyFingerprint;
     storage::io::FileReader reader{path, fingerprint};
 
-    auto num_indices = reader.ReadElementCount32();
-    restrictions.resize(num_indices);
+    auto num_indices = reader.ReadElementCount64();
+    restrictions.reserve(num_indices);
+    InputRestrictionContainer res;
     while (num_indices > 0)
     {
-        InputRestrictionContainer res;
         bool is_only;
         reader.ReadInto(res.restriction.via);
         reader.ReadInto(res.restriction.from);
         reader.ReadInto(res.restriction.to);
         reader.ReadInto(is_only);
+
+        auto num_conditions = reader.ReadElementCount64();
+        res.restriction.condition.reserve(num_conditions);
         for (auto &c : res.restriction.condition)
         {
             reader.ReadInto(c.modifier);
@@ -124,7 +127,7 @@ inline void read(const boost::filesystem::path &path, std::vector<InputRestricti
             reader.DeserializeVector(c.monthdays);
         }
         res.restriction.flags.is_only = is_only;
-        restrictions.push_back(res);
+        restrictions.push_back(std::move(res));
         num_indices--;
     }
 }
@@ -135,6 +138,7 @@ inline void write(storage::io::FileWriter &writer, const InputRestrictionContain
     writer.WriteOne(container.restriction.from);
     writer.WriteOne(container.restriction.to);
     writer.WriteOne(container.restriction.flags.is_only);
+    writer.WriteElementCount64(container.restriction.condition.size());
     for (auto &c : container.restriction.condition)
     {
         writer.WriteFrom(c.modifier);

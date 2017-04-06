@@ -385,3 +385,5 @@ class ConditionalSpeedLimitsCollector : public osmium::handler::Handler
     std::vector<ConditionalSpeedLimit> speed_limits;
     index_type location_storage;
 };
+
+#endif EXTRACT_CONDITIONALS_HPP

@@ -457,7 +457,6 @@ std::vector<std::uint64_t>
 updateConditionalTurns(const UpdaterConfig &config,
                        const TurnLookupTable &turn_penalty_lookup,
                        std::vector<TurnPenalty> &turn_weight_penalties,
-                       std::vector<TurnPenalty> &turn_duration_penalties,
                        std::vector<extractor::InputRestrictionContainer> &conditional_turns,
                        const std::vector<extractor::QueryNode> &internal_to_external_node_map,
                        Timezoner time_zone_handler)
@@ -500,8 +499,7 @@ updateConditionalTurns(const UpdaterConfig &config,
                         time_zone_handler, *found_conditional, internal_to_external_node_map))
                 {
                     turn_weight_penalties[edge_index] = INVALID_TURN_PENALTY;
-                turn_duration_penalties[edge_index] = INVALID_TURN_PENALTY;
-                updated_turns.push_back(edge_index);
+                    updated_turns.push_back(edge_index);
                 }
             }
         }
@@ -654,7 +652,6 @@ EdgeID Updater::LoadAndUpdateEdgeExpandedGraph(
         auto updated_turn_penalties = updateConditionalTurns(config,
                                                              turn_penalty_lookup,
                                                              turn_weight_penalties,
-                                                             turn_duration_penalties,
                                                              conditional_turns,
                                                              internal_to_external_node_map,
                                                              time_zone_handler);
