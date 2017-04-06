@@ -19,8 +19,6 @@ namespace engine
 {
 namespace routing_algorithms
 {
-namespace ch
-{
 
 namespace
 {
@@ -28,7 +26,7 @@ const double constexpr VIAPATH_ALPHA = 0.10;
 const double constexpr VIAPATH_EPSILON = 0.15; // alternative at most 15% longer
 const double constexpr VIAPATH_GAMMA = 0.75;   // alternative shares at most 75% with the shortest.
 
-using QueryHeap = SearchEngineData<Algorithm>::QueryHeap;
+using QueryHeap = SearchEngineData<ch::Algorithm>::QueryHeap;
 using SearchSpaceEdge = std::pair<NodeID, NodeID>;
 
 struct RankedCandidateNode
@@ -50,14 +48,15 @@ struct RankedCandidateNode
 
 // todo: reorder parameters
 template <bool DIRECTION>
-void alternativeRoutingStep(const datafacade::ContiguousInternalMemoryDataFacade<Algorithm> &facade,
-                            QueryHeap &heap1,
-                            QueryHeap &heap2,
-                            NodeID *middle_node,
-                            EdgeWeight *upper_bound_to_shortest_path_weight,
-                            std::vector<NodeID> &search_space_intersection,
-                            std::vector<SearchSpaceEdge> &search_space,
-                            const EdgeWeight min_edge_offset)
+void alternativeRoutingStep(
+    const datafacade::ContiguousInternalMemoryDataFacade<ch::Algorithm> &facade,
+    QueryHeap &heap1,
+    QueryHeap &heap2,
+    NodeID *middle_node,
+    EdgeWeight *upper_bound_to_shortest_path_weight,
+    std::vector<NodeID> &search_space_intersection,
+    std::vector<SearchSpaceEdge> &search_space,
+    const EdgeWeight min_edge_offset)
 {
     QueryHeap &forward_heap = DIRECTION == FORWARD_DIRECTION ? heap1 : heap2;
     QueryHeap &reverse_heap = DIRECTION == FORWARD_DIRECTION ? heap2 : heap1;
@@ -154,8 +153,8 @@ void retrievePackedAlternatePath(const QueryHeap &forward_heap1,
 // from v and intersecting against queues. only half-searches have to be
 // done at this stage
 void computeLengthAndSharingOfViaPath(
-    SearchEngineData<Algorithm> &engine_working_data,
-    const datafacade::ContiguousInternalMemoryDataFacade<Algorithm> &facade,
+    SearchEngineData<ch::Algorithm> &engine_working_data,
+    const datafacade::ContiguousInternalMemoryDataFacade<ch::Algorithm> &facade,
     const NodeID via_node,
     int *real_length_of_via_path,
     int *sharing_of_via_path,
@@ -319,8 +318,8 @@ void computeLengthAndSharingOfViaPath(
 
 // conduct T-Test
 bool viaNodeCandidatePassesTTest(
-    SearchEngineData<Algorithm> &engine_working_data,
-    const datafacade::ContiguousInternalMemoryDataFacade<Algorithm> &facade,
+    SearchEngineData<ch::Algorithm> &engine_working_data,
+    const datafacade::ContiguousInternalMemoryDataFacade<ch::Algorithm> &facade,
     QueryHeap &existing_forward_heap,
     QueryHeap &existing_reverse_heap,
     QueryHeap &new_forward_heap,
@@ -563,8 +562,8 @@ bool viaNodeCandidatePassesTTest(
 }
 
 InternalRouteResult
-alternativePathSearch(SearchEngineData<Algorithm> &engine_working_data,
-                      const datafacade::ContiguousInternalMemoryDataFacade<Algorithm> &facade,
+alternativePathSearch(SearchEngineData<ch::Algorithm> &engine_working_data,
+                      const datafacade::ContiguousInternalMemoryDataFacade<ch::Algorithm> &facade,
                       const PhantomNodes &phantom_node_pair)
 {
     InternalRouteResult raw_route_data;
@@ -847,7 +846,21 @@ alternativePathSearch(SearchEngineData<Algorithm> &engine_working_data,
     return raw_route_data;
 }
 
-} // namespace ch
+// MLD specific route alternatives
+InternalRouteResult
+alternativePathSearch(SearchEngineData<mld::Algorithm> &search_engine_data,
+                      const datafacade::ContiguousInternalMemoryDataFacade<mld::Algorithm> &facade,
+                      const PhantomNodes &phantom_node_pair)
+{
+    // TODO: implement
+
+    (void)search_engine_data;
+    (void)facade;
+    (void)phantom_node_pair;
+
+    return {};
+}
+
 } // namespace routing_algorithms
 } // namespace engine
 } // namespace osrm}
