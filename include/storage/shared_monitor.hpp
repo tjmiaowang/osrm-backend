@@ -12,7 +12,7 @@
 #include <boost/interprocess/sync/scoped_lock.hpp>
 
 #if defined(__linux__)
-#define USE_BOOST_INTERPROCESS_CONDITION 1
+//#define USE_BOOST_INTERPROCESS_CONDITION 1
 #endif
 
 namespace osrm

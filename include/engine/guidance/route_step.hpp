@@ -84,6 +84,8 @@ struct RouteStep
     // Elongate by another step in back
     RouteStep &ElongateBy(const RouteStep &following_step);
 
+    bool IsCompatible(const RouteStep &other) const;
+
     /* Elongate without prior knowledge of in front, or in back, convenience function if you
      * don't know if step is augmented in front or at the back */
     RouteStep &MergeWith(const RouteStep &by_step);
@@ -142,6 +144,14 @@ inline RouteStep &RouteStep::AddInFront(const RouteStep &preceeding_step)
                          preceeding_step.intersections.end());
 
     return *this;
+}
+
+// checks whether we can actually merge two route steps:
+// They neeed to have the same mode, because a route step
+// can only have one mode.
+inline bool RouteStep::IsCompatible(const RouteStep &other) const
+{
+    return mode == other.mode;
 }
 
 // Elongate by another step in back
